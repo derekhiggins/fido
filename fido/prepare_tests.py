@@ -1,4 +1,4 @@
-import unittest
+import unittest, re
 
 import prepare
 
@@ -2953,12 +2953,12 @@ class convert_to_regex(unittest.TestCase):
     #Originally Taken from  fmt/328
     def test_convert_to_regex_588(self):
         self.assertEqual(prepare.convert_to_regex('254120[41:5A]*(0A|0A0D)25(44|54)20([30:39]|[41:5A])', 'Little', 'BOF', '0', '154'), 
-            'TODO^')
+            '(?s)\\A.{0,154}%A [A-Z].*(?:\\n|\\n\\r)%(?:D|T) (?:[0-9]|[A-Z])')
 
     #Originally Taken from  fmt/328
     def test_convert_to_regex_589(self):
         self.assertEqual(prepare.convert_to_regex('2541[41:5A]*(0A|0A0D)25(44|54)([30:39]|[41:5A])', 'Little', 'BOF', '0', '154'), 
-            'TODO^')
+            '(?s)\\A.{0,154}%A[A-Z].*(?:\\n|\\n\\r)%(?:D|T)(?:[0-9]|[A-Z])')
 
     #Originally Taken from  fmt/363
     def test_convert_to_regex_590(self):
@@ -2968,7 +2968,7 @@ class convert_to_regex(unittest.TestCase):
     #Originally Taken from  fmt/363
     def test_convert_to_regex_591(self):
         self.assertEqual(prepare.convert_to_regex('0000{15}[!00]{3}[!00]{2}(0100|00[01:08])', 'Little', 'BOF', '3200', ''), 
-            'TODO^')
+            '(?s)\\A.{3200}\\x00\\x00.{15}(!\\x00).{3}(!\\x00).{2}(?:\\x01\\x00|\\x00[\\x01-\\x08])')
 
     #Originally Taken from  fmt/363
     def test_convert_to_regex_592(self):
@@ -2978,17 +2978,18 @@ class convert_to_regex(unittest.TestCase):
     #Originally Taken from  fmt/363
     def test_convert_to_regex_593(self):
         self.assertEqual(prepare.convert_to_regex('0000{15}[!00]{3}[!00]{2}(0100|00[01:08])', 'Little', 'BOF', '3600', ''), 
-            'TODO^')
+            '(?s)\\A.{3600}\\x00\\x00.{15}(!\\x00).{3}(!\\x00).{2}(?:\\x01\\x00|\\x00[\\x01-\\x08])')
 
     #Originally Taken from  x-fmt/158
     def test_convert_to_regex_594(self):
-        self.assertEqual(prepare.convert_to_regex('53(202020202020|303030303030)31(0D0A|0A){72}(5320202020202032|5330303030303032|4720202020202031|4730303030303031)', 'Little', 'TODO', '72', ''), 
-            '(?s)S(?:      |000000)1(?:\\r\\n|\\n).{72}(?:S      2|S0000002|G      1|G0000001)')
+        self.assertEqual(prepare.convert_to_regex('53(202020202020|303030303030)31(0D0A|0A){72}(5320202020202032|5330303030303032|4720202020202031|4730303030303031)', 'Little', 'IBOF', '72', ''), 
+            #'(?s)S(?:      |000000)1(?:\\r\\n|\\n).{72}(?:S      2|S0000002|G      1|G0000001)')
+            'TODO : IBOF needs to be handled (New position type)')
 
     #Originally Taken from  x-fmt/271
     def test_convert_to_regex_595(self):
         self.assertEqual(prepare.convert_to_regex('83??[01:0C][01:1F]{28}([41:5A]|[61:7A]){10}(43|44|4C|4D|4E)', 'Little', 'BOF', '0', ''), 
-            'TODO^')
+            '(?s)\\A\\x83.?[\\x01-\\x0c][\\x01-\\x1f].{28}(?:[A-Z]|[a-z]).{10}(?:C|D|L|M|N)')
 
     #Originally Taken from  x-fmt/429
     def test_convert_to_regex_596(self):
@@ -2997,23 +2998,24 @@ class convert_to_regex(unittest.TestCase):
 
     #Originally Taken from  x-fmt/429
     def test_convert_to_regex_597(self):
-        self.assertEqual(prepare.convert_to_regex('5375626A6563743A{1-100}446174653A{1-100}4D494D452D56657273696F6E3A{1-100}436F6E74656E742D547970653A206D756C7469706172742F72656C617465643B', 'Little', 'TODO', '0', '105'), 
-            '(?s)Subject:.{1,100}Date:.{1,100}MIME-Version:.{1,100}Content-Type: multipart/related;')
+        self.assertEqual(prepare.convert_to_regex('5375626A6563743A{1-100}446174653A{1-100}4D494D452D56657273696F6E3A{1-100}436F6E74656E742D547970653A206D756C7469706172742F72656C617465643B', 'Little', 'IBOF', '0', '105'), 
+            #'(?s)Subject:.{1,100}Date:.{1,100}MIME-Version:.{1,100}Content-Type: multipart/related;')
+            'TODO : IBOF needs to be handled (New position type)')
 
     #Originally Taken from  x-fmt/8
     def test_convert_to_regex_598(self):
         self.assertEqual(prepare.convert_to_regex('02{2}[01:1C][01:1F]????[00:03]([41:5A]|[61:7A]){10}(43|4E|4C)', 'Little', 'BOF', '0', ''), 
-            'TODO^')
+            '(?s)\\A\\x02.{2}[\\x01-\\x1c][\\x01-\\x1f].?.?[\\x00-\\x03](?:[A-Z]|[a-z]).{10}(?:C|N|L)')
 
     #Originally Taken from  x-fmt/8
     def test_convert_to_regex_599(self):
         self.assertEqual(prepare.convert_to_regex('02{2}000000??[00:03]([41:5A]|[61:7A]){10}(43|4E|4C)', 'Little', 'BOF', '0', ''), 
-            'TODO^')
+            '(?s)\\A\\x02.{2}\\x00\\x00\\x00.?[\\x00-\\x03](?:[A-Z]|[a-z]).{10}(?:C|N|L)')
 
     #Originally Taken from  x-fmt/9
     def test_convert_to_regex_600(self):
         self.assertEqual(prepare.convert_to_regex('03??[01:0C][01:1F]{28}([41:5A]|[61:7A]){10}(43|44|4C|4D|4E)', 'Little', 'BOF', '0', ''), 
-            'TODO^')
+            '(?s)\\A\\x03.?[\\x01-\\x0c][\\x01-\\x1f].{28}(?:[A-Z]|[a-z]).{10}(?:C|D|L|M|N)')
 
 if __name__ == '__main__':
     unittest.main()
