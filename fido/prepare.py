@@ -2,7 +2,7 @@
 #
 # Format Identification for Digital Objects
 
-import cStringIO, zipfile, os
+import cStringIO, zipfile, os, re
 import hashlib
 import urllib
 from xml.etree import ElementTree as ET
@@ -333,130 +333,34 @@ def convert_to_regex(chars, endianness='', pos='BOF', offset='0', maxoffset=''):
             buf.write('}')
         elif maxoffset != None:
             buf.write('.{0,' + maxoffset + '}')
-            
-    while True:
-        if i == len(chars):
-            break
-        #print _convert_err_msg(state,chars[i],i,chars)
-        if state == 'start':
-            if chars[i].isalnum():
-                state = 'bytes'
-            elif chars[i] == '[' and chars[i + 1] == '!':
-                state = 'non-match'
-            elif chars[i] == '[':
-                state = 'bracket'
-            elif chars[i] == '{':
-                state = 'curly'
-            elif chars[i] == '(':
-                state = 'paren'
-            elif chars[i] in '*+?':
-                state = 'specials'
-            else:
-                raise Exception(_convert_err_msg('Illegal character in start', chars[i], i, chars))
-        elif state == 'bytes':
-            (byt, inc) = doByte(chars, i, littleendian)
-            buf.write(byt)
-            i += inc
-            state = 'start'
-        elif state == 'non-match':
-            buf.write('(!')
-            i += 2
-            while True:
-                if chars[i].isalnum():
-                    (byt, inc) = doByte(chars, i, littleendian)
-                    buf.write(byt)
-                    i += inc
-                elif chars[i] == ']':
-                    break
-                else:
-                    raise Exception(_convert_err_msg('Illegal character in non-match', chars[i], i, chars))
-            buf.write(')')
-            i += 1
-            state = 'start'
 
-        elif state == 'bracket':
-            try:
-                buf.write('[')
-                i += 1
-                (byt, inc) = doByte(chars, i, littleendian)
-                buf.write(byt)
-                i += inc
-                assert(chars[i] == ':')
-                buf.write('-')
-                i += 1
-                (byt, inc) = doByte(chars, i, littleendian)
-                buf.write(byt)
-                i += inc
-
-                assert(chars[i] == ']')
-                buf.write(']')
-                i += 1
-            except Exception:
-                print _convert_err_msg('Illegal character in bracket', chars[i], i, chars)
-                raise
-            if i < len(chars) and chars[i] == '{':
-                state = 'curly-after-bracket'
-            else:
-                state = 'start'
-        elif state == 'paren':
-            buf.write('(?:')
-            i += 1
-            while True:
-                if chars[i].isalnum():
-                    (byt, inc) = doByte(chars, i, littleendian)
-                    buf.write(byt)
-                    i += inc
-                elif chars[i] == '|':
-                    buf.write('|')
-                    i += 1
-                elif chars[i] == ')':
-                    break
-                else:
-                    raise Exception(_convert_err_msg('Illegal character in paren', chars[i], i, chars))
-            buf.write(')')
-            i += 1
-            state = 'start'
-        elif state in ['curly', 'curly-after-bracket']:
-            # {nnnn} or {nnn-nnn} or {nnn-*}
-            # {nnn} or {nnn,nnn} or {nnn,}
-            # when there is a curly-after-bracket, then the {m,n} applies to the bracketed item
-            # The above, while sensible, appears to be incorrect.  A '.' is always needed.
-            # for droid equiv behavior
-            #if state == 'curly':
-            buf.write('.')
-            buf.write('{')
-            i += 1                # skip the (
-            while True:
-                if chars[i].isalnum():
-                    buf.write(chars[i])
-                    i += 1
-                elif chars[i] == '-':
-                    buf.write(',')
-                    i += 1
-                elif chars[i] == '*': # skip the *
-                    i += 1
-                elif chars[i] == '}':
-                    break
-                else:
-                    raise Exception(_convert_err_msg('Illegal character in curly', chars[i], i, chars))
-            buf.write('}')
-            i += 1                # skip the )
-            state = 'start'
-        elif state == 'specials':
-            if chars[i] == '*':
-                buf.write('.*')
-                i += 1
-            elif chars[i] == '+':
-                buf.write('.+')
-                i += 1
-            elif chars[i] == '?':
-                if chars[i + 1] != '?':
-                    raise Exception(_convert_err_msg('Illegal character after ?', chars[i + 1], i + 1, chars))
-                buf.write('.?')
-                i += 2
-            state = 'start'
+    re_tokens = re.compile("(?i)([0-9A-F]{2}|\{\d+-?[\d*]*?\}|\[[0-9A-F]+:[0-9A-F]+\]|\?\?|\[!.*?\]|[^0-9A-F])")
+    for c in re_tokens.findall(chars):
+        if len(c) > 2 and c[0:2] == "[!":
+            buf.write("(!")
+            for c in re_tokens.findall(c[2:-1]):
+                b,c = doByte(c, 0, littleendian)
+                buf.write(b)
+            buf.write(")")
+        elif c == "??": buf.write(".?")
+        elif len(c) > 2 and c[0] == "[": 
+            #buf.write(c.replace("[", "[\\x").replace(":", "-\\x").lower())
+            c = c[1:-1]
+            if c.find(":") != -1:
+                p1,p2 = c.split(":")
+                buf.write("["+doByte(p1, 0, littleendian)[0]+"-"+doByte(p2, 0, littleendian)[0]+"]")
+        elif len(c) > 2 and c[0] == "{": 
+            buf.write("."+c.replace("-", ",").replace("*", ""))
+        elif len(c) > 1:
+            b,c = doByte(c, 0, littleendian)
+            buf.write(b)
+        elif c in "|){}": buf.write(c)
+        elif c == "(": buf.write("(?:")
+        elif c == "*": buf.write(".*")
+        elif c == "+": buf.write(".+")
         else:
-            raise Exception('Illegal state {0}'.format(state))
+            raise Exception("Unhandled characters : %s"%c)
+            
     if 'EOF' in pos:
         if offset != '0':
             buf.write('.{' + offset)
