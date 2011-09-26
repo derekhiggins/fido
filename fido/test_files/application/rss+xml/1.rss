@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+        <title>Hello World</title>
+        <description>Hello World</description>
+        <link>http://www.server.com/</link>
+        <lastBuildDate>Tue, 20 Sep 2011 11:11:00 +0000 </lastBuildDate>
+        <pubDate>Tue, 20 Sep 2011 11:11:00 +0000 </pubDate>
+ 
+        <item>
+                <title>Hi</title>
+                <description>Hi to the world</description>
+                <link>http://www.server.com/</link>
+                <guid>a16df05b-5e43-4601-b787-9f01271cbab1</guid>
+                <pubDate>Tue, 20 Sep 2011 10:10:00 +0000 </pubDate>
+        </item>
+ 
+</channel>
+</rss>
