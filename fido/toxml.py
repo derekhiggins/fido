@@ -9,7 +9,7 @@
 # Linux: fido.py [ARGS] | toxml.py > output.xml
 #
 # Usage afterwards:
-# Windows: type output.csv | toxml.py > output.xml
+# Windows: type output.csv | python toxml.py > output.xml
 # Linux: cat output.csv | toxml.py > output.xml
 #
 # for difference in usage, see:
