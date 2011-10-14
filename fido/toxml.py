@@ -23,7 +23,7 @@ import string
 import datetime
 
 # define FIDO version
-fidoVersion = '0.96'
+fidoVersion = '0.9.6'
 # define PRONOM signature version
 signatureVersion = '52'
 # get date and time
